@@ -1,0 +1,24 @@
+dim a, b, x int: dim m, e, m float: dim isadf2341ghfsdlk int
+dim b1 bool
+
+begin (* compound operator1 begin *)
+
+readln x;
+readln e;
+
+i1k := 1.25e2;
+b := x;
+m := (a plus b) div 2;
+b1 := false;
+
+while ((m mult m GT x plus e) or (m mult m) or b1)
+  (* compound op2 begin *)
+  begin
+    if (m mult m GT x)
+      b := m
+    else
+      a := m
+  end (* compound op2 and while loop end *)
+
+end (* compoun op1 end *)
+writeln m, b : end (* end of program *)
