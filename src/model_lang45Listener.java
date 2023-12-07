@@ -1,4 +1,4 @@
-// Generated from model_lang45/model_lang45.g4 by ANTLR 4.12.0
+// Generated from model_lang45.g4 by ANTLR 4.12.0
 import org.antlr.v4.runtime.tree.ParseTreeListener;
 
 /**
@@ -139,6 +139,17 @@ public interface model_lang45Listener extends ParseTreeListener {
 	void exitExpression(model_lang45Parser.ExpressionContext ctx);
 
 	/**
+	 * Enter a parse tree produced by {@link model_lang45Parser#comp_ops_r}.
+	 * @param ctx the parse tree
+	 */
+	void enterComp_ops_r(model_lang45Parser.Comp_ops_rContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link model_lang45Parser#comp_ops_r}.
+	 * @param ctx the parse tree
+	 */
+	void exitComp_ops_r(model_lang45Parser.Comp_ops_rContext ctx);
+
+	/**
 	 * Enter a parse tree produced by {@link model_lang45Parser#operand}.
 	 * @param ctx the parse tree
 	 */
@@ -170,6 +181,17 @@ public interface model_lang45Listener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitTerm(model_lang45Parser.TermContext ctx);
+
+	/**
+	 * Enter a parse tree produced by {@link model_lang45Parser#mult_ops_r}.
+	 * @param ctx the parse tree
+	 */
+	void enterMult_ops_r(model_lang45Parser.Mult_ops_rContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link model_lang45Parser#mult_ops_r}.
+	 * @param ctx the parse tree
+	 */
+	void exitMult_ops_r(model_lang45Parser.Mult_ops_rContext ctx);
 
 	/**
 	 * Enter a parse tree produced by {@link model_lang45Parser#number}.

@@ -40,7 +40,10 @@ output_st
 
 // Expression related
 expression
-  : operand (COMPARISON_OPS operand)*;
+  : operand (comp_ops_r operand)*;
+
+comp_ops_r // такие правила нужны, чтобы я мог отслеживать лексемы через соотв. правило в MyListener'е
+  : COMPARISON_OPS | COMPARISON_OPS;
 
 operand
   : term (addition_ops term)*;
@@ -49,7 +52,10 @@ addition_ops
   : ADD | SUB | OR;
 
 term
-  : factor (MULTIPLICATION_OPS factor)*;
+  : factor (mult_ops_r factor)*;
+
+mult_ops_r
+  : MULTIPLICATION_OPS | MULTIPLICATION_OPS;
 
 number
   : INT_NUMBER | REAL_NUMBER;
@@ -162,7 +168,7 @@ ASSIGNMENT
 
 COMMA
   : ',';
-  
+
 // Number Literals
 REAL_NUMBER
   : DIGIT+ EXP
@@ -219,4 +225,3 @@ WHITE_SPACE
 
 COMMENTARY
   : '(*' .*? '*)' -> skip;
-

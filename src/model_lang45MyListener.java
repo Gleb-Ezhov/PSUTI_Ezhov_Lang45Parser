@@ -10,6 +10,7 @@ public class model_lang45MyListener extends model_lang45BaseListener {
   boolean isThereExprTypesConflict = false;
 
   // не забывать, что у каждого правила есть ruleIndex, с помощью которого можно фильтровать правила из контекста
+  // ruleIndex'ы изменяются, при изменении списка правил в грамматике!!!
   // todo: проверка совместимости типов, участвующих в выражении
   // todo: проверка типа значения, присваиваемого переменной. (переменным float могут присваиваться числа и переменные целого типа)
 
@@ -74,14 +75,47 @@ public class model_lang45MyListener extends model_lang45BaseListener {
   }
 
   @Override
-  public void enterExpression(model_lang45Parser.ExpressionContext ctx) {
+  public void enterFactor(model_lang45Parser.FactorContext ctx) {
+    // ruleIndex is 19
+//    System.out.println(ctx.getRuleIndex());
+    if (ctx.getChildCount() == 1) { // solo identifier or number or logic value
+      exprStack.add(ctx.getChild(0).getText());
+    }
+    else if (ctx.getChildCount() == 2) { // unary operator. second child is another factor, so it will be covered in future call
+      exprStack.add(ctx.getChild(0).getText());
+    }
+    else if (ctx.getChildCount() == 3) { // expression in parentheses
+      // do nothing. добавил, чтобы все случаи показать
+    }
+  }
+
+  @Override
+  public void enterMult_ops_r(model_lang45Parser.Mult_ops_rContext ctx) {
+    exprStack.add(ctx.getText());
+  }
+
+  @Override
+  public void enterAddition_ops(model_lang45Parser.Addition_opsContext ctx) {
+    exprStack.add(ctx.getText());
+  }
+
+  @Override
+  public void enterComp_ops_r(model_lang45Parser.Comp_ops_rContext ctx) {
+    exprStack.add(ctx.getText());
+  }
+
+  @Override
+  public void exitExpression(model_lang45Parser.ExpressionContext ctx) {
+    // Если это выражение из скобок, то не проводим для него анализ
+//    System.out.println(ctx.getParent().getRuleIndex());
+    if (ctx.getParent().getRuleIndex() == 19) return;
+    exprStack.forEach(System.out::println);
 //    System.out.println(ctx.getPayload().getText());
     System.out.println(analyzeExpression(ctx));
   }
 
   private String analyzeExpression(model_lang45Parser.ExpressionContext ctx) {
     isThereExprTypesConflict = false;
-    exprStack.clear();
     // expressionType: 0 - expr type error, 1 - bool, 2 - int, 3 - float
     IntegerWrapper expressionType = new IntegerWrapper(0);
     Boolean typesConflict = new Boolean(false);
@@ -92,11 +126,12 @@ public class model_lang45MyListener extends model_lang45BaseListener {
     }
 
     parseExpression(children, expressionType);
-//    if (analyzeExpressionOnTypesConflict()) {
-//      expressionType.value = 0;
-//      ctx.addErrorNode(new ErrorNodeImpl(new SemanticErrorToken4()));
-//      System.err.println("Ошибка СиА №4: Несовместимые типы в выражении.");
-//    }
+    if (analyzeExpressionOnTypesConflict()) {
+      expressionType.value = 0;
+      ctx.addErrorNode(new ErrorNodeImpl(new SemanticErrorToken4()));
+      System.err.println("Ошибка СиА №4: Несовместимые типы в выражении.");
+    }
+    exprStack.clear(); // чистим стэк выражения, заполненный в соответствующих правилах, на выходе из выражения
 
 //    System.out.println(expressionType);
     return switch (expressionType.value) {
@@ -115,20 +150,19 @@ public class model_lang45MyListener extends model_lang45BaseListener {
        отдельно с доп. логикой на приоритет операций. то есть собрать все висячие узлы в один список и потом его
         дополнительно перенести в стэк уже с учётом приоритета операций. */
       if (children.get(i).getChildCount() == 0) {
-        // identifier ruleIndex = 18; number ruleIndex = 15;
         String expressionElement = children.get(i).getText();
         if (varTypeMap.containsKey(expressionElement)) {
           switch ((String)varTypeMap.get(expressionElement)) {
             case "bool":
-              exprStack.add("bool");
+//              exprStack.add("bool");
               if (expressionType.value < 1) expressionType.value = 1;
               break;
             case "int":
-              exprStack.add("int");
+//              exprStack.add("int");
               if (expressionType.value < 2) expressionType.value = 2;
               break;
             case "float":
-              exprStack.add("float");
+//              exprStack.add("float");
               if (expressionType.value < 3) expressionType.value = 3;
               break;
             default:
@@ -136,21 +170,21 @@ public class model_lang45MyListener extends model_lang45BaseListener {
           }
         }
         else if (expressionElement.compareTo("true") == 0 || expressionElement.compareTo("false") == 0) {
-          exprStack.add("bool");
+//          exprStack.add("bool");
           if (expressionType.value < 1) expressionType.value = 1;
         }
         else {
           if (expressionElement.contains(".")) {
-            exprStack.add("float");
+//            exprStack.add("float");
             if (expressionType.value < 3) expressionType.value = 3;
           }
           else {
             try {
               Integer.parseInt(expressionElement);
-              exprStack.add("int");
+//              exprStack.add("int");
               if (expressionType.value < 2) expressionType.value = 2;
             } catch (NumberFormatException ex) {
-              exprStack.add(expressionElement);
+//              exprStack.add(expressionElement);
 //              System.out.println("This was operation or parentheses token");
             }
           }

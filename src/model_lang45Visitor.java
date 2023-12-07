@@ -1,4 +1,4 @@
-// Generated from model_lang45/model_lang45.g4 by ANTLR 4.12.0
+// Generated from model_lang45.g4 by ANTLR 4.12.0
 import org.antlr.v4.runtime.tree.ParseTreeVisitor;
 
 /**
@@ -94,6 +94,13 @@ public interface model_lang45Visitor<T> extends ParseTreeVisitor<T> {
 	T visitExpression(model_lang45Parser.ExpressionContext ctx);
 
 	/**
+	 * Visit a parse tree produced by {@link model_lang45Parser#comp_ops_r}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitComp_ops_r(model_lang45Parser.Comp_ops_rContext ctx);
+
+	/**
 	 * Visit a parse tree produced by {@link model_lang45Parser#operand}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
@@ -113,6 +120,13 @@ public interface model_lang45Visitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitTerm(model_lang45Parser.TermContext ctx);
+
+	/**
+	 * Visit a parse tree produced by {@link model_lang45Parser#mult_ops_r}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitMult_ops_r(model_lang45Parser.Mult_ops_rContext ctx);
 
 	/**
 	 * Visit a parse tree produced by {@link model_lang45Parser#number}.

@@ -1,4 +1,4 @@
-// Generated from model_lang45/model_lang45.g4 by ANTLR 4.12.0
+// Generated from model_lang45.g4 by ANTLR 4.12.0
 import org.antlr.v4.runtime.tree.AbstractParseTreeVisitor;
 
 /**
@@ -113,6 +113,14 @@ public class model_lang45BaseVisitor<T> extends AbstractParseTreeVisitor<T> impl
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
+	@Override public T visitComp_ops_r(model_lang45Parser.Comp_ops_rContext ctx) { return visitChildren(ctx); }
+
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation returns the result of calling
+	 * {@link #visitChildren} on {@code ctx}.</p>
+	 */
 	@Override public T visitOperand(model_lang45Parser.OperandContext ctx) { return visitChildren(ctx); }
 
 	/**
@@ -130,6 +138,14 @@ public class model_lang45BaseVisitor<T> extends AbstractParseTreeVisitor<T> impl
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
 	@Override public T visitTerm(model_lang45Parser.TermContext ctx) { return visitChildren(ctx); }
+
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation returns the result of calling
+	 * {@link #visitChildren} on {@code ctx}.</p>
+	 */
+	@Override public T visitMult_ops_r(model_lang45Parser.Mult_ops_rContext ctx) { return visitChildren(ctx); }
 
 	/**
 	 * {@inheritDoc}

@@ -1,4 +1,4 @@
-// Generated from model_lang45/model_lang45.g4 by ANTLR 4.12.0
+// Generated from model_lang45.g4 by ANTLR 4.12.0
 
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ErrorNode;
@@ -172,6 +172,19 @@ public class model_lang45BaseListener implements model_lang45Listener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterComp_ops_r(model_lang45Parser.Comp_ops_rContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitComp_ops_r(model_lang45Parser.Comp_ops_rContext ctx) { }
+
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterOperand(model_lang45Parser.OperandContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -205,6 +218,19 @@ public class model_lang45BaseListener implements model_lang45Listener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitTerm(model_lang45Parser.TermContext ctx) { }
+
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterMult_ops_r(model_lang45Parser.Mult_ops_rContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitMult_ops_r(model_lang45Parser.Mult_ops_rContext ctx) { }
 
 	/**
 	 * {@inheritDoc}

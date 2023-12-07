@@ -1,4 +1,4 @@
-// Generated from model_lang45/model_lang45.g4 by ANTLR 4.12.0
+// Generated from model_lang45.g4 by ANTLR 4.12.0
 import org.antlr.v4.runtime.Lexer;
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.Token;
