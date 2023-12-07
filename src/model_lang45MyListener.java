@@ -7,6 +7,7 @@ import java.util.*;
 public class model_lang45MyListener extends model_lang45BaseListener {
   HashMap varTypeMap = new HashMap<String, String>();
   Map varInitMap = new HashMap<String, Boolean>();
+  List<String> exprStack = new ArrayList<>();
 
   // не забывать, что у каждого правила есть ruleIndex, с помощью которого можно фильтровать правила из контекста
   // todo: проверка совместимости типов, участвующих в выражении
@@ -74,14 +75,14 @@ public class model_lang45MyListener extends model_lang45BaseListener {
 
   @Override
   public void enterExpression(model_lang45Parser.ExpressionContext ctx) {
-//    System.out.println(ctx.getPayload().getText());
-    analyzeExpression(ctx.getPayload());
+    System.out.println(ctx.getPayload().getText());
+//    analyzeExpression(ctx.getPayload());
   }
 
   private String analyzeExpression(RuleContext ruleContext) {
     // expressionType: 1 - bool, 2 - int, 3 - float
-    Integer expressionType = 0;
-    Boolean typesConflict = false;
+    IntegerWrapper expressionType = new IntegerWrapper(0);
+    Boolean typesConflict = new Boolean(false);
 
     List<ParseTree> children = new ArrayList<>(ruleContext.getChildCount());
     for (int i = 0; i < ruleContext.getChildCount(); ++i) {
@@ -89,11 +90,12 @@ public class model_lang45MyListener extends model_lang45BaseListener {
     }
 
     analyzeExpressionsChildren(children, expressionType, typesConflict);
+    System.out.println(expressionType.toString());
 
     return "stub";
   }
 
-  private void analyzeExpressionsChildren(List<ParseTree> children, Integer expressionType, Boolean typesConflict) {
+  private void analyzeExpressionsChildren(List<ParseTree> children, IntegerWrapper expressionType, Boolean typesConflict) {
     for (int i = 0; i < children.size(); i++) {
       // мы на висячем узле и можем проанализировать его содержимое
       if (children.get(i).getChildCount() == 0) {
@@ -102,20 +104,38 @@ public class model_lang45MyListener extends model_lang45BaseListener {
         if (varTypeMap.containsKey(expressionElement)) {
           switch ((String)varTypeMap.get(expressionElement)) {
             case "bool":
-              System.out.println("bool");
+              if (expressionType.value < 1) expressionType.value = 1;
               break;
             case "int":
-              System.out.println("int");
+              if (expressionType.value < 2) expressionType.value = 2;
               break;
             case "float":
-              System.out.println("float");
+              if (expressionType.value < 3) expressionType.value = 3;
               break;
             default:
               System.out.println("no match");
           }
         }
-//        if (children.get(i).getParent().toString()
-//        System.out.println(children.get(i).getText());
+        else if (expressionElement.compareTo("true") == 0 || expressionElement.compareTo("false") == 0) {
+          if (expressionType.value < 1) expressionType.value = 1;
+        }
+        else {
+          if (expressionElement.contains(".")) {
+            if (expressionType.value < 3) expressionType.value = 3;
+          }
+          else {
+            try {
+              Integer.parseInt(expressionElement);
+              if (expressionType.value < 2) expressionType.value = 2;
+            } catch (NumberFormatException ex) {
+              System.out.println("This was operation or parentheses token");
+            }
+          }
+        }
+        // вроде как всё со всем можно складывать и сравнивать, поэтому операции, наверное, не буду учитывать при анализе выражения, пока что
+        // Хотя судя по бакалаврской программе, операции надо проверять и булевы литералы валидны только в логич. операциях
+        // может сделать это в правилах для factor, term и т.д., а тут просто тип выражения вычислить
+        // todo: дальше нужно обработать совместимость типов
         children.remove(i);
       }
     }
