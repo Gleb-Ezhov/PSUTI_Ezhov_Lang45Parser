@@ -75,27 +75,33 @@ public class model_lang45MyListener extends model_lang45BaseListener {
 
   @Override
   public void enterExpression(model_lang45Parser.ExpressionContext ctx) {
-    System.out.println(ctx.getPayload().getText());
-//    analyzeExpression(ctx.getPayload());
+//    System.out.println(ctx.getPayload().getText());
+    analyzeExpression(ctx);
   }
 
-  private String analyzeExpression(RuleContext ruleContext) {
+  private String analyzeExpression(model_lang45Parser.ExpressionContext ctx) {
+    exprStack.clear();
     // expressionType: 1 - bool, 2 - int, 3 - float
     IntegerWrapper expressionType = new IntegerWrapper(0);
     Boolean typesConflict = new Boolean(false);
 
-    List<ParseTree> children = new ArrayList<>(ruleContext.getChildCount());
-    for (int i = 0; i < ruleContext.getChildCount(); ++i) {
-      children.add(ruleContext.getChild(i));
+    List<ParseTree> children = new ArrayList<>(ctx.getChildCount());
+    for (int i = 0; i < ctx.getChildCount(); ++i) {
+      children.add(ctx.getChild(i));
     }
 
-    analyzeExpressionsChildren(children, expressionType, typesConflict);
-    System.out.println(expressionType.toString());
+    parseExpression(children, expressionType, typesConflict);
+    System.out.println(expressionType);
+    if (analyzeExpressionOnTypesConflict()) {
+      ctx.addErrorNode(new ErrorNodeImpl(new SemanticErrorToken4()));
+      System.err.println("Ошибка СиА №4: Несовместимые типы в выражении.");
+    }
 
     return "stub";
   }
 
-  private void analyzeExpressionsChildren(List<ParseTree> children, IntegerWrapper expressionType, Boolean typesConflict) {
+  // парсит выражение на ExpressionStack для дальнейшего анализа на конфликт типов, а также вычисляет общий тип выражения
+  private void parseExpression(List<ParseTree> children, IntegerWrapper expressionType, Boolean typesConflict) {
     for (int i = 0; i < children.size(); i++) {
       // мы на висячем узле и можем проанализировать его содержимое
       if (children.get(i).getChildCount() == 0) {
@@ -104,12 +110,15 @@ public class model_lang45MyListener extends model_lang45BaseListener {
         if (varTypeMap.containsKey(expressionElement)) {
           switch ((String)varTypeMap.get(expressionElement)) {
             case "bool":
+              exprStack.add("bool");
               if (expressionType.value < 1) expressionType.value = 1;
               break;
             case "int":
+              exprStack.add("int");
               if (expressionType.value < 2) expressionType.value = 2;
               break;
             case "float":
+              exprStack.add("float");
               if (expressionType.value < 3) expressionType.value = 3;
               break;
             default:
@@ -117,25 +126,25 @@ public class model_lang45MyListener extends model_lang45BaseListener {
           }
         }
         else if (expressionElement.compareTo("true") == 0 || expressionElement.compareTo("false") == 0) {
+          exprStack.add("bool");
           if (expressionType.value < 1) expressionType.value = 1;
         }
         else {
           if (expressionElement.contains(".")) {
+            exprStack.add("float");
             if (expressionType.value < 3) expressionType.value = 3;
           }
           else {
             try {
               Integer.parseInt(expressionElement);
+              exprStack.add("int");
               if (expressionType.value < 2) expressionType.value = 2;
             } catch (NumberFormatException ex) {
+              exprStack.add(expressionElement);
               System.out.println("This was operation or parentheses token");
             }
           }
         }
-        // вроде как всё со всем можно складывать и сравнивать, поэтому операции, наверное, не буду учитывать при анализе выражения, пока что
-        // Хотя судя по бакалаврской программе, операции надо проверять и булевы литералы валидны только в логич. операциях
-        // может сделать это в правилах для factor, term и т.д., а тут просто тип выражения вычислить
-        // todo: дальше нужно обработать совместимость типов
         children.remove(i);
       }
     }
@@ -153,9 +162,15 @@ public class model_lang45MyListener extends model_lang45BaseListener {
       }
 
       if (childrenToPass.size() > 0) {
-        analyzeExpressionsChildren(childrenToPass, expressionType, typesConflict);
+        parseExpression(childrenToPass, expressionType, typesConflict);
       }
     }
+  }
+
+  // Анализ текущего стэка на наличие конфилкта типов
+  private boolean analyzeExpressionOnTypesConflict() {
+    //todo: совместимость типов как в моём прошлом компиляторе
+    return false;
   }
 
   @Override
