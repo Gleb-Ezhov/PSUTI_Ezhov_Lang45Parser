@@ -8,6 +8,7 @@ public class model_lang45MyListener extends model_lang45BaseListener {
   Map varInitMap = new HashMap<String, Boolean>();
   List<String> exprStack = new ArrayList<>();
   boolean isThereExprTypesConflict = false;
+  boolean isInnerExprAreAnalyzing = false;
 
   // не забывать, что у каждого правила есть ruleIndex, с помощью которого можно фильтровать правила из контекста
   // ruleIndex'ы изменяются, при изменении списка правил в грамматике!!!
@@ -71,6 +72,8 @@ public class model_lang45MyListener extends model_lang45BaseListener {
 
   @Override
   public void enterAssignment_st(model_lang45Parser.Assignment_stContext ctx) {
+    // ruleIndex is 5
+//    System.out.println(ctx.getRuleIndex());
     varInitMap.put(ctx.identifier().getText(), new Boolean(true));
   }
 
@@ -112,9 +115,11 @@ public class model_lang45MyListener extends model_lang45BaseListener {
     // Если это выражение из скобок, то проводим для него анализ сразу.
     // Его тип останется в стеке после анализа для дальнейшего анализа корневого выражения.
     if (ctx.getParent().getRuleIndex() == 19) {
+      isInnerExprAreAnalyzing = true;  // todo: это я хотел флагом избежать добавления error узла во внутреннем выражении, который к нему не относится
       analyzeExpression(ctx);
       return;
     }
+    isInnerExprAreAnalyzing = false;
     exprStack.forEach(System.out::println);
 //    System.out.println(ctx.getPayload().getText());
     System.out.println(analyzeExpression(ctx));
@@ -220,6 +225,7 @@ public class model_lang45MyListener extends model_lang45BaseListener {
   private boolean analyzeExpressionOnTypesConflict(IntegerWrapper expressionType) {
     //todo: совместимость типов как в моём прошлом компиляторе
     convertExprStackValuesToTypes(expressionType);
+//    sortOperationsByPrecedence();
     // todo: похоже, что здесь нужно "расфасовать" операции и их операнды в стеке по приоритету перед провдением анализа
     /* Есть ещё идея сделать для factor, term и operand правил отдельные стеки и обрабатывать их выражения на выходе из
        этих правил. Результат анализа будет помещаться в стек более младшей операции. В конце тип попадёт в основной стек выражения.
@@ -229,26 +235,47 @@ public class model_lang45MyListener extends model_lang45BaseListener {
     IntegerWrapper i = new IntegerWrapper(0);
     while (exprStack.size() != 1 && !isThereExprTypesConflict) {
       for (i.value = 0; i.value < exprStack.size(); i.value += 1) {
-        if (exprStack.get(i.value).equals("mult") || exprStack.get(i.value).equals("plus") ||
-                exprStack.get(i.value).equals("min") || exprStack.get(i.value).equals("div")) {
+        if (exprStack.get(i.value).equals("mult") || exprStack.get(i.value).equals("div") ||
+                exprStack.get(i.value).equals("and") || exprStack.get(i.value).equals("~")) {
           operationTypeValidation1(i);
           break;
         }
-        else if (exprStack.get(i.value).equals("LT") || exprStack.get(i.value).equals("LE") || exprStack.get(i.value).equals("NE") ||
-                exprStack.get(i.value).equals("GT") || exprStack.get(i.value).equals("GE") || exprStack.get(i.value).equals("EQ"))
-        {
-          operationTypeValidation2(i);
-          break;
-        }
-        else if (exprStack.get(i.value).equals("and") || exprStack.get(i.value).equals("~") || exprStack.get(i.value).equals("or"))
+      }
+
+      for (i.value = 0; i.value < exprStack.size(); i.value += 1) {
+        if (exprStack.get(i.value).equals("plus") || exprStack.get(i.value).equals("min") || exprStack.get(i.value).equals("or"))
         {
           operationTypeValidation3(i);
           break;
         }
       }
-    }
+
+      for (i.value = 0; i.value < exprStack.size(); i.value += 1) {
+        if (exprStack.get(i.value).equals("LT") || exprStack.get(i.value).equals("LE") || exprStack.get(i.value).equals("NE") ||
+                exprStack.get(i.value).equals("GT") || exprStack.get(i.value).equals("GE") || exprStack.get(i.value).equals("EQ"))
+        {
+          operationTypeValidation2(i);
+          break;
+        }
+      }
+
+    } // while
     return isThereExprTypesConflict;
   }
+
+//  private void sortOperationsByPrecedence() {
+//    for (int i = 0; i < exprStack.size(); ++i) {
+//      if (exprStack.get(i).equals("mult") && exprStack.get(i).equals("div") && exprStack.get(i).equals("and")) {
+//        String operand1 = exprStack.get(i - 1);
+//        String operation = exprStack.get(i);
+//        String operand2 = exprStack.get(i + 1);
+//        exprStack.remove(i - 1);
+//        exprStack.remove(i - 1);
+//        exprStack.remove(i - 1);
+//        exprStack.add();
+//      }
+//    }
+//  }
 
   private void convertExprStackValuesToTypes(IntegerWrapper expressionType) {
     for (int i = 0; i < exprStack.size(); ++i) {
@@ -302,31 +329,38 @@ public class model_lang45MyListener extends model_lang45BaseListener {
     } // for
   }
 
+  // mult, div, and, ~
   private void operationTypeValidation1(IntegerWrapper index)
   {
     String operation = exprStack.get(index.value);
-    if (exprStack.get(index.value - 1).equals("int") && exprStack.get(index.value + 1).equals("int"))
+    if (operation.equals("~")) {
+      exprStack.remove(index.value);
+//      String typeOfOperand = exprStack.get(index.value);
+      exprStack.remove(index.value);
+      exprStack.add(index.value, "bool");
+    }
+    else if (exprStack.get(index.value - 1).equals("int") && exprStack.get(index.value + 1).equals("int"))
     {
       // удаление обработанной операции из стека выражения
-      exprStack.remove(0);
-      exprStack.remove(0);
-      exprStack.remove(0);
+      exprStack.remove(index.value - 1);
+      exprStack.remove(index.value - 1);
+      exprStack.remove(index.value - 1);
 
       // добавление результата операции в стек
-      if (operation.equals("/")) exprStack.add(0, "float");
-      else exprStack.add(0, "int");
+      if (operation.equals("div")) exprStack.add(0, "float");
+      else exprStack.add(index.value - 1, "int");
     }
     else if (exprStack.get(index.value - 1).equals("float") && exprStack.get(index.value + 1).equals("int") ||
             exprStack.get(index.value - 1).equals("int") && exprStack.get(index.value + 1).equals("float") ||
             exprStack.get(index.value - 1).equals("float") && exprStack.get(index.value + 1).equals("float"))
     {
       // удаление обработанной операции из стека выражения
-      exprStack.remove(0);
-      exprStack.remove(0);
-      exprStack.remove(0);
+      exprStack.remove(index.value - 1);
+      exprStack.remove(index.value - 1);
+      exprStack.remove(index.value - 1);
 
       // добавление результата операции в стек
-      exprStack.add(0, "float");
+      exprStack.add(index.value - 1, "float");
     }
     else if (exprStack.get(index.value - 1).equals("bool") || exprStack.get(index.value + 1).equals("bool"))
     {
@@ -334,23 +368,24 @@ public class model_lang45MyListener extends model_lang45BaseListener {
     }
   }
 
+  // comparison operations
   private void operationTypeValidation2(IntegerWrapper index)
   {
     if (exprStack.get(index.value - 1).equals("int") && exprStack.get(index.value + 1).equals("int"))
     {
-      exprStack.remove(0);
-      exprStack.remove(0);
-      exprStack.remove(0);
+      exprStack.remove(index.value - 1);
+      exprStack.remove(index.value - 1);
+      exprStack.remove(index.value - 1);
 
-      exprStack.add(0, "bool");
+      exprStack.add(index.value - 1, "bool");
     }
     else if (exprStack.get(index.value - 1).equals("float") && exprStack.get(index.value + 1).equals("int") ||
             exprStack.get(index.value - 1).equals("int") && exprStack.get(index.value + 1).equals("float") ||
             exprStack.get(index.value - 1).equals("float") && exprStack.get(index.value + 1).equals("float"))
     {
-      exprStack.remove(0);
-      exprStack.remove(0);
-      exprStack.remove(0);
+      exprStack.remove(index.value - 1);
+      exprStack.remove(index.value - 1);
+      exprStack.remove(index.value - 1);
 
       exprStack.add(0, "bool");
     }
@@ -358,11 +393,11 @@ public class model_lang45MyListener extends model_lang45BaseListener {
     {
       if (exprStack.get(index.value).equals("NE") || exprStack.get(index.value).equals("EQ"))
       {
-        exprStack.remove(0);
-        exprStack.remove(0);
-        exprStack.remove(0);
+        exprStack.remove(index.value - 1);
+        exprStack.remove(index.value - 1);
+        exprStack.remove(index.value - 1);
 
-        exprStack.add(0, "bool");
+        exprStack.add(index.value - 1, "bool");
       }
       else
       {
@@ -375,16 +410,42 @@ public class model_lang45MyListener extends model_lang45BaseListener {
     }
   }
 
+  // add, sub, or
   private void operationTypeValidation3(IntegerWrapper index) {
-    if (exprStack.get(index.value - 1).equals("bool") && exprStack.get(index.value + 1).equals("bool"))
-    {
-      exprStack.remove(0);
-      exprStack.remove(0);
-      exprStack.remove(0);
+    String operation = exprStack.get(index.value);
+    if (operation.equals("or")) {
+      if (exprStack.get(index.value - 1).equals("bool") && exprStack.get(index.value + 1).equals("bool"))
+      {
+        exprStack.remove(index.value - 1);
+        exprStack.remove(index.value - 1);
+        exprStack.remove(index.value - 1);
 
-      exprStack.add(0, "bool");
+        exprStack.add(index.value - 1, "bool");
+      }
+      else
+      {
+        isThereExprTypesConflict = true;
+      }
     }
-    else
+    else if (exprStack.get(index.value - 1).equals("int") && exprStack.get(index.value + 1).equals("int"))
+    {
+      exprStack.remove(index.value - 1);
+      exprStack.remove(index.value - 1);
+      exprStack.remove(index.value - 1);
+
+      exprStack.add(index.value - 1, "int");
+    }
+    else if (exprStack.get(index.value - 1).equals("float") && exprStack.get(index.value + 1).equals("int") ||
+            exprStack.get(index.value - 1).equals("int") && exprStack.get(index.value + 1).equals("float") ||
+            exprStack.get(index.value - 1).equals("float") && exprStack.get(index.value + 1).equals("float"))
+    {
+      exprStack.remove(index.value - 1);
+      exprStack.remove(index.value - 1);
+      exprStack.remove(index.value - 1);
+
+      exprStack.add(index.value - 1, "float");
+    }
+    else if (exprStack.get(index.value - 1).equals("bool") || exprStack.get(index.value + 1).equals("bool"))
     {
       isThereExprTypesConflict = true;
     }

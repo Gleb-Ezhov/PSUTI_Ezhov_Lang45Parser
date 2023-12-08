@@ -13,7 +13,7 @@ b1 := false;
 b1 := b1 NE 423;
 
                         (* SeE4 in 'or (m mult m) or b1'  (m mult m) should be bool *)
-while ((m mult m GT x plus e) or b1)
+while ((m mult m GT x plus e) or (m mult m) or b1)
   (* compound op2 begin *)
   begin
     if (m mult m GT x)
