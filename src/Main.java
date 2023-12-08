@@ -9,7 +9,7 @@ import java.util.Arrays;
 public class Main {
     public static void main(String[] args) {
         try {
-            CharStream inputStream = CharStreams.fromFileName("D:\\Univer\\Конструирование компиляторов (1-2 маг)\\PSUTI_Ezhov_Lang45Parser\\src\\example45_sem_errs.txt");
+            CharStream inputStream = CharStreams.fromFileName("D:\\Univer\\Конструирование компиляторов (1-2 маг)\\PSUTI_Ezhov_Lang45Parser\\src\\model_lang45correct.txt");
             model_lang45Lexer myLexer = new model_lang45Lexer(inputStream);
             CommonTokenStream commonTokenStream = new CommonTokenStream(myLexer);
             model_lang45Parser myParser = new model_lang45Parser(commonTokenStream);

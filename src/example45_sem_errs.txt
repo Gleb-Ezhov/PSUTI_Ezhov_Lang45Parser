@@ -8,6 +8,7 @@ readln e;
 
 i1k := 1.25e2;
 b := x;
+b := b1;
 m := (a plus b) div 2;
 b1 := false;
 b1 := b1 NE 423;
@@ -16,7 +17,7 @@ b1 := b1 NE 423;
 while ((m mult m GT x plus e) or (m mult m) or b1)
   (* compound op2 begin *)
   begin
-    if (m mult m GT x)
+    if (m mult m GT x plus 3432) (* plus 3432 is err *)
       b := m
     else
       a := m

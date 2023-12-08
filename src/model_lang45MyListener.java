@@ -7,8 +7,11 @@ public class model_lang45MyListener extends model_lang45BaseListener {
   HashMap varTypeMap = new HashMap<String, String>();
   Map varInitMap = new HashMap<String, Boolean>();
   List<String> exprStack = new ArrayList<>();
+  List<String> tempExprStack = new ArrayList<>();
   boolean isThereExprTypesConflict = false;
   boolean isInnerExprAreAnalyzing = false;
+  String assignmentRightPartType = "";
+  String ifExpressionType = "";
 
   // не забывать, что у каждого правила есть ruleIndex, с помощью которого можно фильтровать правила из контекста
   // ruleIndex'ы изменяются, при изменении списка правил в грамматике!!!
@@ -74,7 +77,41 @@ public class model_lang45MyListener extends model_lang45BaseListener {
   public void enterAssignment_st(model_lang45Parser.Assignment_stContext ctx) {
     // ruleIndex is 5
 //    System.out.println(ctx.getRuleIndex());
+
+    assignmentRightPartType = "";
     varInitMap.put(ctx.identifier().getText(), new Boolean(true));
+  }
+
+  @Override
+  public void exitAssignment_st(model_lang45Parser.Assignment_stContext ctx) {
+    if (varTypeMap.containsKey(ctx.getChild(0).getText())) {
+      String varType = (String) varTypeMap.get(ctx.getChild(0).getText());
+      if (varType.equals("float")) {
+        if (assignmentRightPartType.equals("bool") || assignmentRightPartType.equals("null")) {
+          String identifierName = ctx.getChild(0).getText();
+          ctx.addErrorNode(new ErrorNodeImpl(new SemanticErrorToken5()));
+          System.err.println("Ошибка СеА №5: Несовместимость типов в присваивании. Переменная: " + identifierName);
+        }
+      }
+      else if (!varType.equals(assignmentRightPartType)) {
+        String identifierName = ctx.getChild(0).getText();
+        ctx.addErrorNode(new ErrorNodeImpl(new SemanticErrorToken5()));
+        System.err.println("Ошибка СеА №5: Несовместимость типов в присваивании. Переменная: " + identifierName);
+      }
+    }
+  }
+
+  @Override
+  public void exitConditional_st(model_lang45Parser.Conditional_stContext ctx) {
+    // ruleIndex is 6
+//    System.out.println(ctx.getRuleIndex());
+    if (!ifExpressionType.equals("bool")) {
+      String identifierName = ctx.getChild(0).getText();
+      ctx.addErrorNode(new ErrorNodeImpl(new SemanticErrorToken6()));
+      System.err.println("Ошибка СеА №6: Тип выражения внутри условного оператора if отличен от логического.");
+    }
+
+    ifExpressionType = "";
   }
 
   // ---------- На этих событиях формирую стек выражения ---------------
@@ -115,14 +152,20 @@ public class model_lang45MyListener extends model_lang45BaseListener {
     // Если это выражение из скобок, то проводим для него анализ сразу.
     // Его тип останется в стеке после анализа для дальнейшего анализа корневого выражения.
     if (ctx.getParent().getRuleIndex() == 19) {
-      isInnerExprAreAnalyzing = true;  // todo: это я хотел флагом избежать добавления error узла во внутреннем выражении, который к нему не относится
+      isInnerExprAreAnalyzing = true;  // todo: это я хотел флагом избежать добавления error узла во внутреннем выражении, который к нему не относится (не сделано)
       analyzeExpression(ctx);
       return;
     }
     isInnerExprAreAnalyzing = false;
     exprStack.forEach(System.out::println);
 //    System.out.println(ctx.getPayload().getText());
-    System.out.println(analyzeExpression(ctx));
+    String expressionType = analyzeExpression(ctx);
+    System.out.println(expressionType);
+    if (ctx.getParent().getRuleIndex() == 5) {
+      assignmentRightPartType = expressionType;
+    } else if (ctx.getParent().getRuleIndex() == 6) {
+      ifExpressionType = expressionType;
+    }
     exprStack.clear(); // чистим стек выражения, заполненный в соответствующих правилах, на выходе из корневого выражения
   }
 
@@ -190,6 +233,10 @@ public class model_lang45MyListener extends model_lang45BaseListener {
           }
           else {
             try {
+              // todo: учесть буквы-суфиксы для разных представлений целого числа
+//              if (expressionElement.contains("d") || expressionElement.contains("D")) {
+//                expressionElement = expressionElement.substring(0, expressionElement.length());
+//              }
               Integer.parseInt(expressionElement);
 //              exprStack.add("int");
               if (expressionType.value < 2) expressionType.value = 2;
@@ -225,6 +272,11 @@ public class model_lang45MyListener extends model_lang45BaseListener {
   private boolean analyzeExpressionOnTypesConflict(IntegerWrapper expressionType) {
     //todo: совместимость типов как в моём прошлом компиляторе
     convertExprStackValuesToTypes(expressionType);
+    // EXPRE
+//    for (int i = 0; i < exprStack.size(); ++i) {
+//      tempExprStack.add(exprStack.get(i));
+//      exprStack.remove(i);
+//    }
 //    sortOperationsByPrecedence();
     // todo: похоже, что здесь нужно "расфасовать" операции и их операнды в стеке по приоритету перед провдением анализа
     /* Есть ещё идея сделать для factor, term и operand правил отдельные стеки и обрабатывать их выражения на выходе из
@@ -258,8 +310,23 @@ public class model_lang45MyListener extends model_lang45BaseListener {
           break;
         }
       }
-
     } // while
+
+    // тут достаточно устанавливать expressionType (?)
+    if (!isThereExprTypesConflict) {
+      switch (exprStack.get(0)) {
+        case "bool" -> expressionType.value = 1;
+        case "int" -> expressionType.value = 2;
+        case "float" -> expressionType.value = 3;
+        default -> expressionType.value = 0;
+      };
+    }
+
+    // EXPRE
+//    for (String el : tempExprStack) {
+//      exprStack.add(0, el);
+//    }
+
     return isThereExprTypesConflict;
   }
 
@@ -277,6 +344,7 @@ public class model_lang45MyListener extends model_lang45BaseListener {
 //    }
 //  }
 
+  // todo: вполне вероятно, что изменение expressionType здесь не нужно, и оно считается тут некорректно.
   private void convertExprStackValuesToTypes(IntegerWrapper expressionType) {
     for (int i = 0; i < exprStack.size(); ++i) {
       String curElement = exprStack.get(i);
@@ -347,7 +415,7 @@ public class model_lang45MyListener extends model_lang45BaseListener {
       exprStack.remove(index.value - 1);
 
       // добавление результата операции в стек
-      if (operation.equals("div")) exprStack.add(0, "float");
+      if (operation.equals("div")) exprStack.add(index.value - 1, "float");
       else exprStack.add(index.value - 1, "int");
     }
     else if (exprStack.get(index.value - 1).equals("float") && exprStack.get(index.value + 1).equals("int") ||
@@ -387,7 +455,7 @@ public class model_lang45MyListener extends model_lang45BaseListener {
       exprStack.remove(index.value - 1);
       exprStack.remove(index.value - 1);
 
-      exprStack.add(0, "bool");
+      exprStack.add(index.value - 1, "bool");
     }
     else if (exprStack.get(index.value - 1).equals("bool") && exprStack.get(index.value + 1).equals("bool"))
     {
