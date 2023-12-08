@@ -7,6 +7,7 @@ public class model_lang45MyListener extends model_lang45BaseListener {
   HashMap varTypeMap = new HashMap<String, String>();
   Map varInitMap = new HashMap<String, Boolean>();
   List<String> exprStack = new ArrayList<>();
+  List<String> innerExprStack = new ArrayList<>();
   List<String> tempExprStack = new ArrayList<>();
   boolean isThereExprTypesConflict = false;
   boolean isInnerExprAreAnalyzing = false;
@@ -120,10 +121,18 @@ public class model_lang45MyListener extends model_lang45BaseListener {
     // ruleIndex is 19
 //    System.out.println(ctx.getRuleIndex());
     if (ctx.getChildCount() == 1) { // solo identifier or number or logic value
-      exprStack.add(ctx.getChild(0).getText());
+      if (isInnerExprAreAnalyzing) {
+        innerExprStack.add(ctx.getChild(0).getText());
+      } else {
+        exprStack.add(ctx.getChild(0).getText());
+      }
     }
     else if (ctx.getChildCount() == 2) { // unary operator. second child is another factor, so it will be covered in future call
-      exprStack.add(ctx.getChild(0).getText());
+      if (isInnerExprAreAnalyzing) {
+        innerExprStack.add(ctx.getChild(0).getText());
+      } else {
+        exprStack.add(ctx.getChild(0).getText());
+      }
     }
     else if (ctx.getChildCount() == 3) { // expression in parentheses
       // do nothing. добавил, чтобы все случаи показать
@@ -132,19 +141,39 @@ public class model_lang45MyListener extends model_lang45BaseListener {
 
   @Override
   public void enterMult_ops_r(model_lang45Parser.Mult_ops_rContext ctx) {
-    exprStack.add(ctx.getText());
+    if (isInnerExprAreAnalyzing) {
+      innerExprStack.add(ctx.getChild(0).getText());
+    } else {
+      exprStack.add(ctx.getText());
+    }
   }
 
   @Override
   public void enterAddition_ops(model_lang45Parser.Addition_opsContext ctx) {
-    exprStack.add(ctx.getText());
+    if (isInnerExprAreAnalyzing) {
+      innerExprStack.add(ctx.getChild(0).getText());
+    } else {
+      exprStack.add(ctx.getText());
+    }
   }
 
   @Override
   public void enterComp_ops_r(model_lang45Parser.Comp_ops_rContext ctx) {
-    exprStack.add(ctx.getText());
+    if (isInnerExprAreAnalyzing) {
+      innerExprStack.add(ctx.getChild(0).getText());
+    } else {
+      exprStack.add(ctx.getText());
+    }
   }
   // ------------------------------------------------------------------------
+
+  @Override
+  public void enterExpression(model_lang45Parser.ExpressionContext ctx) {
+    // Если выражение внутреннее, то его элементы будут собираться в его отдельный стек
+    if (ctx.getParent().getRuleIndex() == 19) {
+      isInnerExprAreAnalyzing = true;
+    }
+  }
 
   @Override
   public void exitExpression(model_lang45Parser.ExpressionContext ctx) {
@@ -152,12 +181,12 @@ public class model_lang45MyListener extends model_lang45BaseListener {
     // Если это выражение из скобок, то проводим для него анализ сразу.
     // Его тип останется в стеке после анализа для дальнейшего анализа корневого выражения.
     if (ctx.getParent().getRuleIndex() == 19) {
-      isInnerExprAreAnalyzing = true;  // todo: это я хотел флагом избежать добавления error узла во внутреннем выражении, который к нему не относится (не сделано)
       analyzeExpression(ctx);
+      isInnerExprAreAnalyzing = false;
+      innerExprStack.clear();
       return;
     }
-    isInnerExprAreAnalyzing = false;
-    exprStack.forEach(System.out::println);
+//    exprStack.forEach(System.out::println);
 //    System.out.println(ctx.getPayload().getText());
     String expressionType = analyzeExpression(ctx);
     System.out.println(expressionType);
@@ -175,6 +204,12 @@ public class model_lang45MyListener extends model_lang45BaseListener {
     IntegerWrapper expressionType = new IntegerWrapper(0);
     Boolean typesConflict = new Boolean(false);
 
+    // текущий exprStack будет вычислять только внутреннее выражение
+    if (isInnerExprAreAnalyzing) {
+      tempExprStack = new ArrayList<>(exprStack);
+      exprStack = new ArrayList<>(innerExprStack);
+    }
+
 //    List<ParseTree> children = new ArrayList<>(ctx.getChildCount());
 //    for (int i = 0; i < ctx.getChildCount(); ++i) {
 //      children.add(ctx.getChild(i));
@@ -185,6 +220,13 @@ public class model_lang45MyListener extends model_lang45BaseListener {
       expressionType.value = 0;
       ctx.addErrorNode(new ErrorNodeImpl(new SemanticErrorToken4()));
       System.err.println("Ошибка СеА №4: Несовместимые типы в выражении.");
+    }
+
+    // меняю стек обратно
+    if (isInnerExprAreAnalyzing) {
+      String lastType = exprStack.get(0);
+      exprStack = new ArrayList<>(tempExprStack);
+      exprStack.add(lastType);
     }
 
     return switch (expressionType.value) {
@@ -272,11 +314,6 @@ public class model_lang45MyListener extends model_lang45BaseListener {
   private boolean analyzeExpressionOnTypesConflict(IntegerWrapper expressionType) {
     //todo: совместимость типов как в моём прошлом компиляторе
     convertExprStackValuesToTypes(expressionType);
-    // EXPRE
-//    for (int i = 0; i < exprStack.size(); ++i) {
-//      tempExprStack.add(exprStack.get(i));
-//      exprStack.remove(i);
-//    }
 //    sortOperationsByPrecedence();
     // todo: похоже, что здесь нужно "расфасовать" операции и их операнды в стеке по приоритету перед провдением анализа
     /* Есть ещё идея сделать для factor, term и operand правил отдельные стеки и обрабатывать их выражения на выходе из
@@ -321,11 +358,6 @@ public class model_lang45MyListener extends model_lang45BaseListener {
         default -> expressionType.value = 0;
       };
     }
-
-    // EXPRE
-//    for (String el : tempExprStack) {
-//      exprStack.add(0, el);
-//    }
 
     return isThereExprTypesConflict;
   }

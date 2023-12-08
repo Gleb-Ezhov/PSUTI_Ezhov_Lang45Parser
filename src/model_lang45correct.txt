@@ -1,5 +1,4 @@
 dim a, b, x float: dim m, e float: dim d int
-dim x int
 
 begin (* compound operator1 begin *)
 
@@ -9,14 +8,12 @@ readln e;
 (* d := 10d;   !!  *)
 d := 12d;
 
-d := x;
 a := 0.0;
 b := x;
 m := (a plus b) div 2;
 
-                            (* (m mult m GT x plus e) or (m mult m EQ 100) *)
 
-while ((x plus e) GT m mult m)
+while ((m mult m GT x plus e) or (m mult m EQ 100))
   (* compound op2 begin *)
   begin
     if (m mult m GT x)
