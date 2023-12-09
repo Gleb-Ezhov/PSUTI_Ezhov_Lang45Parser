@@ -5,7 +5,6 @@ begin (* compound operator1 begin *)
 readln x;
 readln e;
 
-(* d := 10d;   !!  *)
 d := 12d;
 
 a := 0.0;

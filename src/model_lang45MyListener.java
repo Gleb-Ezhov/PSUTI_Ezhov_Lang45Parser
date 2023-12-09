@@ -16,8 +16,7 @@ public class model_lang45MyListener extends model_lang45BaseListener {
 
   // не забывать, что у каждого правила есть ruleIndex, с помощью которого можно фильтровать правила из контекста
   // ruleIndex'ы изменяются, при изменении списка правил в грамматике!!!
-  // todo: проверка совместимости типов, участвующих в выражении
-  // todo: проверка типа значения, присваиваемого переменной. (переменным float могут присваиваться числа и переменные целого типа)
+  // Здесь много закомментированных sout'ов, которые можно использовать для отладки.
 
   @Override
   public void enterDeclaration(model_lang45Parser.DeclarationContext ctx) {
@@ -28,7 +27,7 @@ public class model_lang45MyListener extends model_lang45BaseListener {
 //    System.out.println(numOfChild);
 //    System.out.println(ctx.getRuleIndex());
 
-    // пары обявленный идентификатор-значение заносятся в мапу
+    // Пары объявленный идентификатор-значение заносятся в мапу
     for (int i = 1; i < numOfChild; i += 2) {
       if (varTypeMap.containsKey(ctx.children.get(i).getText())) {
         String thisIdentifierName = ctx.children.get(i).getText();
@@ -189,7 +188,7 @@ public class model_lang45MyListener extends model_lang45BaseListener {
 //    exprStack.forEach(System.out::println);
 //    System.out.println(ctx.getPayload().getText());
     String expressionType = analyzeExpression(ctx);
-    System.out.println(expressionType);
+//    System.out.println(expressionType);
     if (ctx.getParent().getRuleIndex() == 5) {
       assignmentRightPartType = expressionType;
     } else if (ctx.getParent().getRuleIndex() == 6) {
@@ -275,10 +274,6 @@ public class model_lang45MyListener extends model_lang45BaseListener {
           }
           else {
             try {
-              // todo: учесть буквы-суфиксы для разных представлений целого числа
-//              if (expressionElement.contains("d") || expressionElement.contains("D")) {
-//                expressionElement = expressionElement.substring(0, expressionElement.length());
-//              }
               Integer.parseInt(expressionElement);
 //              exprStack.add("int");
               if (expressionType.value < 2) expressionType.value = 2;
@@ -415,11 +410,30 @@ public class model_lang45MyListener extends model_lang45BaseListener {
         }
         else {
           try {
+            // Удаление буквы-суффикса у целого числа с явным обозначением представления
+            if (!curElement.equals("and") && (curElement.charAt(curElement.length() - 1) == 'd' ||
+                    curElement.charAt(curElement.length() - 1) == 'D')) {
+              curElement = curElement.substring(0, curElement.length() - 1);
+            }
+            else if (curElement.charAt(curElement.length() - 1) == 'o' ||
+                    curElement.charAt(curElement.length() - 1) == 'O') {
+              curElement = curElement.substring(0, curElement.length() - 1);
+            }
+            else if (curElement.charAt(curElement.length() - 1) == 'h' ||
+                    curElement.charAt(curElement.length() - 1) == 'H') {
+              curElement = curElement.substring(0, curElement.length() - 1);
+            }
+            else if (curElement.charAt(curElement.length() - 1) == 'b' ||
+                    curElement.charAt(curElement.length() - 1) == 'B') {
+              curElement = curElement.substring(0, curElement.length() - 1);
+            }
+            // Пробуем парсить в int текущий элемент выражения
             Integer.parseInt(curElement);
             exprStack.remove(i);
             exprStack.add(i, "int");
             if (expressionType.value < 2) expressionType.value = 2;
           } catch (NumberFormatException ex) {
+            // В случае исключения — наткнулись на операцию. Добавляем её в стек как есть.
             exprStack.remove(i);
             exprStack.add(i, curElement);
 //              System.out.println("This was operation token or type from nested expression.");
