@@ -5,7 +5,7 @@ begin (* compound operator1 begin *)
 readln x;
 readln e;
 
-e := 1.25e2;
+e := 1.25e-2234;
 a := 0.0;
 b := x;
 m := (a plus b) div 2;

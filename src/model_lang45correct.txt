@@ -7,7 +7,7 @@ readln e;
 
 d := 12d;
 
-a := 0.0;
+a := 0.0e+42;
 b := x;
 m := (a plus b) div 2;
 

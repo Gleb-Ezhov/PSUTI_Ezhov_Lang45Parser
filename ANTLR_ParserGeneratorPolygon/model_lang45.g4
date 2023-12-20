@@ -142,6 +142,12 @@ OR
 UNARY_OP
   : '~';
 
+ADD_EXP
+  : '+';
+
+SUB_EXP
+  : '-';
+
 // Identifier
 ID
   : LETTER (LETTER | INT_NUMBER)*;
@@ -175,7 +181,7 @@ REAL_NUMBER
   | (DIGIT+)? '.' DIGIT+ EXP?;
 
 EXP
-  : EXP_LETTER (ADD | SUB)? DIGIT+;
+  : EXP_LETTER (ADD_EXP | SUB_EXP)? DIGIT+;
 
 INT_NUMBER
   : HEX_NUMBER | OCT_NUMBER | DEC_NUMBER;
