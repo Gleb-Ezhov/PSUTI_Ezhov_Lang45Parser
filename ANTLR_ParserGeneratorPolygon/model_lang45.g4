@@ -36,7 +36,7 @@ input_st
   : READLN identifier (COMMA identifier)*;
 
 output_st
-  : WRITELN expression (COMMA expression);
+  : WRITELN expression (COMMA expression)*;
 
 // Expression related
 expression
