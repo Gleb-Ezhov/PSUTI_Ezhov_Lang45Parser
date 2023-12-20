@@ -13,8 +13,9 @@ public class model_lang45MyListener extends model_lang45BaseListener {
   boolean isInnerExprAreAnalyzing = false;
   String assignmentRightPartType = "";
   String ifExpressionType = "";
+  String whileExpressionType = "";
 
-  // не забывать, что у каждого правила есть ruleIndex, с помощью которого можно фильтровать правила из контекста
+  // Не забывать, что у каждого правила есть ruleIndex, с помощью которого можно фильтровать правила из контекста.
   // ruleIndex'ы изменяются, при изменении списка правил в грамматике!!!
   // Здесь много закомментированных sout'ов, которые можно использовать для отладки.
 
@@ -48,7 +49,6 @@ public class model_lang45MyListener extends model_lang45BaseListener {
       String thisIdentifierName = ctx.getText();
       ctx.addErrorNode(new ErrorNodeImpl(new SemanticErrorToken1()));
       System.err.println("Ошибка СеА №1: Использование необъявленной переменной " + thisIdentifierName);
-
     }
     // Идентификаторы из объявлений не включены в проверку на инициализацию
     else if (ctx.parent.getRuleIndex() != 1 && !varInitMap.containsKey(ctx.getText())) {
@@ -56,12 +56,6 @@ public class model_lang45MyListener extends model_lang45BaseListener {
       ctx.addErrorNode(new ErrorNodeImpl(new SemanticErrorToken2()));
       System.err.println("Ошибка СеА №2: Использование неинициализированной переменной " + thisIdentifierName);
     }
-//    // Если идентификатор фигурирует в объявлении повторно else if (ctx.parent.getRuleIndex() == 1) {
-//      String thisIdentifierName = ctx.getText();
-//      ctx.addErrorNode(new ErrorNodeImpl(new SemanticErrorToken3()));
-//      System.err.println("Ошибка СеА №3: Повторное объявление переменной " + thisIdentifierName);
-//    }
-
 //    System.out.println(ctx.getRuleIndex());
   }
 
@@ -106,12 +100,23 @@ public class model_lang45MyListener extends model_lang45BaseListener {
     // ruleIndex is 6
 //    System.out.println(ctx.getRuleIndex());
     if (!ifExpressionType.equals("bool")) {
-      String identifierName = ctx.getChild(0).getText();
       ctx.addErrorNode(new ErrorNodeImpl(new SemanticErrorToken6()));
       System.err.println("Ошибка СеА №6: Тип выражения внутри условного оператора if отличен от логического.");
     }
 
     ifExpressionType = "";
+  }
+
+  @Override
+  public void exitConditional_loop_st(model_lang45Parser.Conditional_loop_stContext ctx) {
+    // ruleIndex is 8
+//    System.out.println(ctx.getRuleIndex());
+    if (!whileExpressionType.equals("bool")) {
+      ctx.addErrorNode(new ErrorNodeImpl(new SemanticErrorToken7()));
+      System.err.println("Ошибка СеА №7: Тип выражения внутри условного цикла while отличен от логического.");
+    }
+
+    whileExpressionType = "";
   }
 
   // ---------- На этих событиях формирую стек выражения ---------------
@@ -193,6 +198,8 @@ public class model_lang45MyListener extends model_lang45BaseListener {
       assignmentRightPartType = expressionType;
     } else if (ctx.getParent().getRuleIndex() == 6) {
       ifExpressionType = expressionType;
+    } else if (ctx.getParent().getRuleIndex() == 8) {
+      whileExpressionType = expressionType;
     }
     exprStack.clear(); // чистим стек выражения, заполненный в соответствующих правилах, на выходе из корневого выражения
   }
