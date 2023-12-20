@@ -131,7 +131,7 @@ public class model_lang45MyListener extends model_lang45BaseListener {
         exprStack.add(ctx.getChild(0).getText());
       }
     }
-    else if (ctx.getChildCount() == 2) { // unary operator. second child is another factor, so it will be covered in future call
+    else if (ctx.getChildCount() == 2) { // unary operator. second child is another factor, so it will be covered in a future call
       if (isInnerExprAreAnalyzing) {
         innerExprStack.add(ctx.getChild(0).getText());
       } else {
@@ -184,7 +184,7 @@ public class model_lang45MyListener extends model_lang45BaseListener {
 //    System.out.println(ctx.getParent().getRuleIndex());
     // Если это выражение из скобок, то проводим для него анализ сразу.
     // Его тип останется в стеке после анализа для дальнейшего анализа корневого выражения.
-    if (ctx.getParent().getRuleIndex() == 19) {
+    if (ctx.getParent().getRuleIndex() == 19) {  // parent is factor
       analyzeExpression(ctx);
       isInnerExprAreAnalyzing = false;
       innerExprStack.clear();
@@ -216,12 +216,6 @@ public class model_lang45MyListener extends model_lang45BaseListener {
       exprStack = new ArrayList<>(innerExprStack);
     }
 
-//    List<ParseTree> children = new ArrayList<>(ctx.getChildCount());
-//    for (int i = 0; i < ctx.getChildCount(); ++i) {
-//      children.add(ctx.getChild(i));
-//    }
-
-    //parseExpression(children, expressionType);
     if (analyzeExpressionOnTypesConflict(expressionType)) {
       expressionType.value = 0;
       ctx.addErrorNode(new ErrorNodeImpl(new SemanticErrorToken4()));
@@ -243,85 +237,9 @@ public class model_lang45MyListener extends model_lang45BaseListener {
     };
   }
 
-  // парсит выражение на ExpressionStack для дальнейшего анализа на конфликт типов, а также вычисляет общий тип выражения
-  private void parseExpression(List<ParseTree> children, IntegerWrapper expressionType) {
-    for (int i = 0; i < children.size(); i++) {
-      // мы на висячем узле и можем проанализировать его содержимое
-      /* todo: проблема. типы и операции добавляются в стек выражения подряд. похоже, это нужно будет делать
-       отдельно с доп. логикой на приоритет операций. то есть собрать все висячие узлы в один список и потом его
-        дополнительно перенести в стэк уже с учётом приоритета операций. */
-      if (children.get(i).getChildCount() == 0) {
-        String expressionElement = children.get(i).getText();
-        if (varTypeMap.containsKey(expressionElement)) {
-          switch ((String)varTypeMap.get(expressionElement)) {
-            case "bool":
-//              exprStack.add("bool");
-              if (expressionType.value < 1) expressionType.value = 1;
-              break;
-            case "int":
-//              exprStack.add("int");
-              if (expressionType.value < 2) expressionType.value = 2;
-              break;
-            case "float":
-//              exprStack.add("float");
-              if (expressionType.value < 3) expressionType.value = 3;
-              break;
-            default:
-              System.out.println("no match");
-          }
-        }
-        else if (expressionElement.compareTo("true") == 0 || expressionElement.compareTo("false") == 0) {
-//          exprStack.add("bool");
-          if (expressionType.value < 1) expressionType.value = 1;
-        }
-        else {
-          if (expressionElement.contains(".")) {
-//            exprStack.add("float");
-            if (expressionType.value < 3) expressionType.value = 3;
-          }
-          else {
-            try {
-              Integer.parseInt(expressionElement);
-//              exprStack.add("int");
-              if (expressionType.value < 2) expressionType.value = 2;
-            } catch (NumberFormatException ex) {
-//              exprStack.add(expressionElement);
-//              System.out.println("This was operation or parentheses token");
-            }
-          }
-        }
-        children.remove(i);
-      }
-    }
-
-    // создаю список детей каждого из текущих неконечных детей, чтобы рекурсивно передать их дальше, и так до висячего узла
-    for (int i = 0; i < children.size(); i++) {
-      if (children.get(i) == null) {
-        children.remove(i);
-        continue;
-      }
-
-      List<ParseTree> childrenToPass = new ArrayList<>(children.get(i).getChildCount());
-      for (int i1 = 0; i1 < children.get(i).getChildCount(); ++i1) {
-        childrenToPass.add(children.get(i).getChild(i1));
-      }
-
-      if (childrenToPass.size() > 0) {
-        parseExpression(childrenToPass, expressionType);
-      }
-    }
-  }
-
   // Анализ текущего стека на наличие конфликта типов
   private boolean analyzeExpressionOnTypesConflict(IntegerWrapper expressionType) {
-    //todo: совместимость типов как в моём прошлом компиляторе
     convertExprStackValuesToTypes(expressionType);
-//    sortOperationsByPrecedence();
-    // todo: похоже, что здесь нужно "расфасовать" операции и их операнды в стеке по приоритету перед провдением анализа
-    /* Есть ещё идея сделать для factor, term и operand правил отдельные стеки и обрабатывать их выражения на выходе из
-       этих правил. Результат анализа будет помещаться в стек более младшей операции. В конце тип попадёт в основной стек выражения.
-       В таком случае нужно будет написать дополнительно более мелкую обработку под каждый тип операций.
-     */
 
     IntegerWrapper i = new IntegerWrapper(0);
     while (exprStack.size() != 1 && !isThereExprTypesConflict) {
@@ -351,7 +269,6 @@ public class model_lang45MyListener extends model_lang45BaseListener {
       }
     } // while
 
-    // тут достаточно устанавливать expressionType (?)
     if (!isThereExprTypesConflict) {
       switch (exprStack.get(0)) {
         case "bool" -> expressionType.value = 1;
@@ -364,21 +281,6 @@ public class model_lang45MyListener extends model_lang45BaseListener {
     return isThereExprTypesConflict;
   }
 
-//  private void sortOperationsByPrecedence() {
-//    for (int i = 0; i < exprStack.size(); ++i) {
-//      if (exprStack.get(i).equals("mult") && exprStack.get(i).equals("div") && exprStack.get(i).equals("and")) {
-//        String operand1 = exprStack.get(i - 1);
-//        String operation = exprStack.get(i);
-//        String operand2 = exprStack.get(i + 1);
-//        exprStack.remove(i - 1);
-//        exprStack.remove(i - 1);
-//        exprStack.remove(i - 1);
-//        exprStack.add();
-//      }
-//    }
-//  }
-
-  // todo: вполне вероятно, что изменение expressionType здесь не нужно, и оно считается тут некорректно.
   private void convertExprStackValuesToTypes(IntegerWrapper expressionType) {
     for (int i = 0; i < exprStack.size(); ++i) {
       String curElement = exprStack.get(i);
@@ -388,17 +290,14 @@ public class model_lang45MyListener extends model_lang45BaseListener {
           case "bool":
             exprStack.remove(i);
             exprStack.add(i, "bool");
-            if (expressionType.value < 1) expressionType.value = 1;
             break;
           case "int":
             exprStack.remove(i);
             exprStack.add(i, "int");
-            if (expressionType.value < 2) expressionType.value = 2;
             break;
           case "float":
             exprStack.remove(i);
             exprStack.add(i, "float");
-            if (expressionType.value < 3) expressionType.value = 3;
             break;
           default:
             System.out.println("no match");
@@ -407,13 +306,11 @@ public class model_lang45MyListener extends model_lang45BaseListener {
       else if (curElement.compareTo("true") == 0 || curElement.compareTo("false") == 0) {
         exprStack.remove(i);
         exprStack.add(i, "bool");
-        if (expressionType.value < 1) expressionType.value = 1;
       }
       else {
         if (curElement.contains(".")) {
           exprStack.remove(i);
           exprStack.add(i, "float");
-          if (expressionType.value < 3) expressionType.value = 3;
         }
         else {
           try {
@@ -438,7 +335,6 @@ public class model_lang45MyListener extends model_lang45BaseListener {
             Integer.parseInt(curElement);
             exprStack.remove(i);
             exprStack.add(i, "int");
-            if (expressionType.value < 2) expressionType.value = 2;
           } catch (NumberFormatException ex) {
             // В случае исключения — наткнулись на операцию. Добавляем её в стек как есть.
             exprStack.remove(i);
@@ -585,7 +481,6 @@ public class model_lang45MyListener extends model_lang45BaseListener {
     for (int i = 0; i < list.size(); ++i) {
 //      System.out.println(list.get(i).toString());
     }
-
   }
 
   @Override
@@ -593,8 +488,5 @@ public class model_lang45MyListener extends model_lang45BaseListener {
   {
 //    System.out.println("Exit from program: " + ctx.getText());
 //    varInitMap.forEach((key, value) -> { System.out.println(key + " is initialized: " + value.toString()); });
-
   }
-
-
 }

@@ -15,8 +15,6 @@ public class Main {
             model_lang45Parser myParser = new model_lang45Parser(commonTokenStream);
             model_lang45Parser.ProgramContext programContext = myParser.program();
 
-
-
             model_lang45MyListener listener = new model_lang45MyListener();
             ParseTreeWalker.DEFAULT.walk(listener, programContext);
 
